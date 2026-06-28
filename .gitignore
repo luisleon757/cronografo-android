@@ -1,0 +1,20 @@
+# Android
+.gradle/
+.idea/
+build/
+local.properties
+cronografo_android/app/build/
+cronografo_android/build/
+cronografo_android/.gradle/
+cronografo_android/.idea/
+
+# .NET MAUI
+bin/
+obj/
+cronografo/bin/
+cronografo/obj/
+
+# Python / IDEs
+__pycache__/
+*.pyc
+.vscode/
