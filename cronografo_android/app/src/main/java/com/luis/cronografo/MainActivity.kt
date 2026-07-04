@@ -142,14 +142,16 @@ fun CronografoApp(viewModel: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(stringResource(R.string.title_cronografo), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 30.sp)
-                    Text(statusText.asString(), color = Color.LightGray, fontSize = 24.sp)
+                    Text(stringResource(R.string.title_cronografo), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(statusText.asString(), color = Color.LightGray, fontSize = 12.sp)
                 }
                 Button(
                     onClick = { if (isScanning) viewModel.stopScan() else viewModel.startScan() },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (isScanning) Color.DarkGray else MaterialTheme.colorScheme.secondary)
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isScanning) Color.DarkGray else MaterialTheme.colorScheme.secondary),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp)
                 ) {
-                    Text(if (isScanning) stringResource(R.string.btn_scanning) else stringResource(R.string.btn_scan), color = Color.White)
+                    Text(if (isScanning) "..." else "->", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -224,23 +226,23 @@ fun CronografoApp(viewModel: MainViewModel) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(stringResource(R.string.settings_session), color = Color.White, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Button(onClick = { viewModel.sendWeight() }, modifier = Modifier.weight(1f)) {
+                                        Text(stringResource(R.string.btn_send))
+                                    }
+                                    Button(onClick = { viewModel.resetSession() }, modifier = Modifier.weight(1f)) {
+                                        Text(stringResource(R.string.btn_reset))
+                                    }
+                                }
                                 OutlinedTextField(
                                     value = pelletWeightText,
                                     onValueChange = { viewModel.updateWeightText(it) },
                                     label = { Text(stringResource(R.string.weight_label)) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     singleLine = true
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = { viewModel.sendWeight() }) {
-                                    Text(stringResource(R.string.btn_send))
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = { viewModel.resetSession() }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
-                                    Text(stringResource(R.string.btn_reset))
-                                }
                             }
                             
                             Spacer(modifier = Modifier.height(16.dp))
@@ -248,7 +250,7 @@ fun CronografoApp(viewModel: MainViewModel) {
                                 Text(stringResource(R.string.language_selector), color = Color.White, modifier = Modifier.weight(1f))
                                 var expanded by remember { mutableStateOf(false) }
                                 Box {
-                                    Button(onClick = { expanded = true }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
+                                    Button(onClick = { expanded = true }) {
                                         val langName = when (currentLang) {
                                             "ca" -> stringResource(R.string.lang_catalan)
                                             "en" -> stringResource(R.string.lang_english)
@@ -277,10 +279,9 @@ fun CronografoApp(viewModel: MainViewModel) {
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)).padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(stringResource(R.string.shot_number, shot.number.toString()), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
-                        Text(shot.displayVelocity, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
-                        Text(shot.displayEnergy, color = Color.LightGray, fontSize = 24.sp, modifier = Modifier.weight(1f))
-                        Text(shot.displayTime, color = Color.Gray, fontSize = 24.sp, modifier = Modifier.weight(1f))
+                        Text(shot.number.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        Text(shot.displayVelocity, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        Text(shot.displayEnergy, color = Color.LightGray, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -292,7 +293,7 @@ fun CronografoApp(viewModel: MainViewModel) {
 fun StatsCard(title: String, avg: String, min: String, max: String, color: Color, modifier: Modifier = Modifier) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(title, color = color, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(title, color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             StatRow(stringResource(R.string.stat_avg), avg)
             StatRow(stringResource(R.string.stat_min), min)
@@ -304,7 +305,7 @@ fun StatsCard(title: String, avg: String, min: String, max: String, color: Color
 @Composable
 fun StatRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Color.Gray, fontSize = 24.sp)
-        Text(value, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = Color.LightGray, fontSize = 15.sp)
+        Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
     }
 }

@@ -10,7 +10,7 @@ namespace cronografo.Models
         public DateTime Timestamp { get; set; } = DateTime.Now;
 
         public string DisplayTime => Timestamp.ToString("HH:mm:ss");
-        public string DisplayVelocity => $"{Velocity:F1} m/s";
-        public string DisplayEnergy => $"{Energy:F1} J";
+        public string DisplayVelocity => $"{Velocity:F2} m/s";
+        public string DisplayEnergy => $"{Energy:F2} J";
     }
 }

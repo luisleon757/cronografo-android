@@ -16,22 +16,32 @@ class VoiceAnnouncer(private val baseContext: Context) : TextToSpeech.OnInitList
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            setLanguage("ca") // Default to Catalan
-            val result = tts.setLanguage(currentLocale)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("VoiceAnnouncer", "Language not supported")
-            } else {
-                isInitialized = true
-            }
+            isInitialized = true
+            setLanguage("ca") // Use Catalan as default
         } else {
             Log.e("VoiceAnnouncer", "Error initializing TTS")
         }
     }
 
     fun setLanguage(langCode: String) {
-        currentLocale = Locale(langCode)
+        currentLocale = when (langCode) {
+            "ca" -> Locale("ca", "ES")
+            "es" -> Locale("es", "ES")
+            else -> Locale(langCode)
+        }
         if (isInitialized) {
-            tts.language = currentLocale
+            var result = tts.setLanguage(currentLocale)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                if (langCode == "ca") {
+                    result = tts.setLanguage(Locale("ca"))
+                } else if (langCode == "es") {
+                    result = tts.setLanguage(Locale("es"))
+                }
+            }
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("VoiceAnnouncer", "Language $langCode not supported, falling back to ES")
+                tts.setLanguage(Locale("es", "ES"))
+            }
         }
         val config = Configuration(baseContext.resources.configuration)
         config.setLocale(currentLocale)
@@ -39,9 +49,9 @@ class VoiceAnnouncer(private val baseContext: Context) : TextToSpeech.OnInitList
     }
 
     private fun formatWithDecimal(value: Float): String {
-        val roundedValue = (value * 10).roundToInt()
-        val intPart = roundedValue / 10
-        val decPart = roundedValue % 10
+        val roundedValue = (value * 100).roundToInt()
+        val intPart = roundedValue / 100
+        val decPart = roundedValue % 100
         return if (decPart > 0) {
             localizedContext.getString(R.string.voice_decimal_con, intPart.toString(), decPart.toString())
         } else {

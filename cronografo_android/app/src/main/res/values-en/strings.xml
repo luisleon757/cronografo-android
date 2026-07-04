@@ -8,17 +8,17 @@
     <string name="devices_available">Available Devices</string>
     <string name="btn_connect">Connect</string>
     <string name="btn_disconnect">Disconnect</string>
-    <string name="energy_label">Energy: %1$s Joules</string>
-    <string name="title_velocity">VELOCITY</string>
-    <string name="title_energy">ENERGY</string>
+    <string name="energy_label">%1$s Joules</string>
+    <string name="title_velocity">m/s</string>
+    <string name="title_energy">joules</string>
     <string name="settings_session">Session Settings</string>
     <string name="weight_label">Weight (g)</string>
     <string name="btn_send">Send</string>
     <string name="btn_reset">Reset</string>
     <string name="history_title">Shot History</string>
-    <string name="stat_avg">Average</string>
-    <string name="stat_min">Minimum</string>
-    <string name="stat_max">Maximum</string>
+    <string name="stat_avg">Mit</string>
+    <string name="stat_min">Min</string>
+    <string name="stat_max">Max</string>
     
     <string name="status_disconnected">Disconnected</string>
     <string name="status_scanning">Scanning for devices...</string>

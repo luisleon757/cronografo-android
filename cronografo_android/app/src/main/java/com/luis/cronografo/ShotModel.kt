@@ -17,8 +17,8 @@ data class ShotModel(
         }
         
     val displayVelocity: String
-        get() = String.format(Locale.US, "%.1f m/s", velocity)
+        get() = String.format(Locale.US, "%.2f m/s", velocity)
         
     val displayEnergy: String
-        get() = String.format(Locale.US, "%.1f J", energy)
+        get() = String.format(Locale.US, "%.2f J", energy)
 }

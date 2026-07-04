@@ -6,31 +6,7 @@
 #include <stdarg.h>
 #include <math.h>
 
-#define HIST_SIZE 10
-float historial[HIST_SIZE] = {0};
-int idxHistorial = 0;
-
-// Función para redondear a 1 decimal
-float redondear1Decimal(float valor) {
-    return roundf(valor * 10.0) / 10.0;
-}
-
-bool esVelocidadRepetida(float nuevaVelocidad) {
-    float nuevaRedondeada = redondear1Decimal(nuevaVelocidad);
-    
-    for (int i = 0; i < HIST_SIZE; i++) {
-        float histRedondeado = redondear1Decimal(historial[i]);
-        if (nuevaRedondeada == histRedondeado) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void guardarVelocidad(float v) {
-    historial[idxHistorial] = v;
-    idxHistorial = (idxHistorial + 1) % HIST_SIZE;
-}
+// (Funciones de historial y redondeo artificial eliminadas para máxima precisión)
 
 // Variables BLE
 BLEServer *pServer = NULL;
@@ -94,17 +70,32 @@ float velocidadMax = 0;
 
 int numDisparos = 0;
 
-bool esperandoSensorA = true;
-bool esperandoSensorB = false;
+volatile bool esperandoSensorA = true;
+volatile bool esperandoSensorB = false;
+volatile bool disparoDetectado = false;
 
-unsigned long tiempoA = 0;
-unsigned long tiempoB = 0;
-
-bool prevA = LOW;
-bool prevB = LOW;
+volatile unsigned long tiempoA = 0;
+volatile unsigned long tiempoB = 0;
 
 const unsigned long TIMEOUT_MS = 1000;
-unsigned long tiempoInicioEspera = 0;
+volatile unsigned long tiempoInicioEspera = 0;
+
+void IRAM_ATTR isrSensorA() {
+    if (esperandoSensorA) {
+        tiempoA = micros();
+        esperandoSensorA = false;
+        esperandoSensorB = true;
+        tiempoInicioEspera = millis();
+    }
+}
+
+void IRAM_ATTR isrSensorB() {
+    if (esperandoSensorB) {
+        tiempoB = micros();
+        esperandoSensorB = false;
+        disparoDetectado = true;
+    }
+}
 
 void btPrint(const String& mensaje) {
     if (deviceConnected && pTxCharacteristic != NULL) {
@@ -164,10 +155,8 @@ void setup() {
     pinMode(sensorA, INPUT);
     pinMode(sensorB, INPUT);
 
-    // Inicializar historial con valores únicos
-    for (int i = 0; i < HIST_SIZE; i++) {
-        historial[i] = 1000.0 + i;
-    }
+    attachInterrupt(digitalPinToInterrupt(sensorA), isrSensorA, RISING);
+    attachInterrupt(digitalPinToInterrupt(sensorB), isrSensorB, RISING);
     
     Serial.begin(115200);
 
@@ -218,78 +207,46 @@ void loop() {
         Serial.println("Cliente BLE conectado!");
     }
 
-    bool estadoA = digitalRead(sensorA);
-    bool estadoB = digitalRead(sensorB);
+    if (disparoDetectado) {
+        disparoDetectado = false;
+        unsigned long dt = tiempoB - tiempoA;
 
-    if (esperandoSensorA) {
-        if (estadoA == HIGH && prevA == LOW) {
-            tiempoA = micros();
-            esperandoSensorA = false;
-            esperandoSensorB = true;
-            tiempoInicioEspera = millis();
+        if (dt >= 50 && dt <= 1000000) {
+            float tiempoSegundos = dt / 1000000.0;
+            float velocidadBase = distanciaSensores / tiempoSegundos;
+            float velocidad = velocidadBase * factorCalibracion;
+            float masa = pesoGramos / 1000.0;
+            float energia = 0.5 * masa * velocidad * velocidad;
+
+            // Actualizar estadísticas
+            energiaTotal += energia;
+            velocidadTotal += velocidad;
+            numDisparos++;
+
+            if (velocidad < velocidadMin) velocidadMin = velocidad;
+            if (velocidad > velocidadMax) velocidadMax = velocidad;
+            if (energia < energiaMin) energiaMin = energia;
+            if (energia > energiaMax) energiaMax = energia;
+
+            // Publicar valores con 2 decimales
+            btPrintf("Disparo #%d\n", numDisparos);
+            btPrintf(" %.2f m/s\n", velocidad);
+            btPrintf(" %.2f Jul\n\n", energia);
+
+            Serial.printf("Disparo #%d | V: %.2f m/s | E: %.2f J\n", numDisparos, velocidad, energia);
+        } else {
+            btPrintf("Error: dt fuera de rango (%lu us)\n", dt);
+            Serial.printf("Error: dt fuera de rango (%lu us)\n", dt);
         }
+
+        esperandoSensorA = true;
     }
-    else if (esperandoSensorB) {
-        if (estadoB == HIGH && prevB == LOW) {
-            tiempoB = micros();
-            unsigned long dt = tiempoB - tiempoA;
-
-            if (dt >= 50 && dt <= 1000000) {
-                float tiempoSegundos = dt / 1000000.0;
-                float velocidadBase = distanciaSensores / tiempoSegundos;
-                float velocidad = velocidadBase * factorCalibracion;
-                float masa = pesoGramos / 1000.0;
-                float energia = 0.5 * masa * velocidad * velocidad;
-
-                // Actualizar estadísticas con valor original
-                energiaTotal += energia;
-                velocidadTotal += velocidad;
-                numDisparos++;
-
-                if (velocidad < velocidadMin) velocidadMin = velocidad;
-                if (velocidad > velocidadMax) velocidadMax = velocidad;
-                if (energia < energiaMin) energiaMin = energia;
-                if (energia > energiaMax) energiaMax = energia;
-                
-                // Ajuste de velocidad para evitar duplicados
-                float velocidadPublicada = velocidad;
-                float energiaPublicada = energia;
-                
-                // Asegurar velocidad única (comparando con 1 decimal)
-                while (esVelocidadRepetida(velocidadPublicada)) {
-                    velocidadPublicada += 0.3;
-                }
-                
-                // Guardar en historial la velocidad publicada
-                guardarVelocidad(velocidadPublicada);
-                
-                // Recalcular energía con velocidad final
-                energiaPublicada = 0.5 * masa * velocidadPublicada * velocidadPublicada;
-
-                // Publicar valores con 1 decimal
-                btPrintf("Disparo #%d\n", numDisparos);
-                btPrintf(" %.1f m/s\n", velocidadPublicada);
-                btPrintf(" %.1f Jul\n\n", energiaPublicada);
-
-                Serial.printf("Disparo #%d | V: %.1f m/s | E: %.1f J\n", numDisparos, velocidadPublicada, energiaPublicada);
-            } else {
-                btPrintf("Error: dt fuera de rango (%lu us)\n", dt);
-                Serial.printf("Error: dt fuera de rango (%lu us)\n", dt);
-            }
-
-            esperandoSensorA = true;
-            esperandoSensorB = false;
-        }
-        else if (millis() - tiempoInicioEspera > TIMEOUT_MS) {
-            btPrintln("Timeout: El segundo sensor no fue detectado.");
-            Serial.println("Timeout: El segundo sensor no fue detectado.");
-            esperandoSensorA = true;
-            esperandoSensorB = false;
-        }
+    else if (esperandoSensorB && (millis() - tiempoInicioEspera > TIMEOUT_MS)) {
+        btPrintln("Timeout: El segundo sensor no fue detectado.");
+        Serial.println("Timeout: El segundo sensor no fue detectado.");
+        esperandoSensorB = false;
+        esperandoSensorA = true;
     }
-
-    prevA = estadoA;
-    prevB = estadoB;
 
     // Procesar comandos entrantes recibidos por BLE RX
     if (cmdReady) {
@@ -330,9 +287,9 @@ void loop() {
                 float eneProm = energiaTotal / numDisparos;
                 
                 btPrintf("Disparos: %d\n", numDisparos);
-                btPrintf("ms: Prom %.1f    | Min %.1f | Max %.1f\n",
+                btPrintf("ms: Prom %.2f    | Min %.2f | Max %.2f\n",
                         velProm, velocidadMin, velocidadMax);
-                btPrintf("Jul: Prom %.1f      | Min %.1f | Max %.1f\n",
+                btPrintf("Jul: Prom %.2f      | Min %.2f | Max %.2f\n",
                         eneProm, energiaMin, energiaMax);
             } else {
                 btPrintln("No hay datos estadísticos");

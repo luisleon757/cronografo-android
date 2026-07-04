@@ -8,17 +8,17 @@
     <string name="devices_available">Dispositius Disponibles</string>
     <string name="btn_connect">Connectar</string>
     <string name="btn_disconnect">Desconnectar</string>
-    <string name="energy_label">Energia: %1$s Joules</string>
-    <string name="title_velocity">VELOCITAT</string>
-    <string name="title_energy">ENERGIA</string>
+    <string name="energy_label">%1$s Joules</string>
+    <string name="title_velocity">m/s</string>
+    <string name="title_energy">joules</string>
     <string name="settings_session">Ajustos de Sessió</string>
     <string name="weight_label">Pes (g)</string>
     <string name="btn_send">Enviar</string>
     <string name="btn_reset">Reset</string>
     <string name="history_title">Historial de Trets</string>
-    <string name="stat_avg">Mitjana</string>
-    <string name="stat_min">Mínima</string>
-    <string name="stat_max">Màxima</string>
+    <string name="stat_avg">Mit</string>
+    <string name="stat_min">Min</string>
+    <string name="stat_max">Max</string>
     
     <string name="status_disconnected">Desconnectat</string>
     <string name="status_scanning">Escanejant dispositius...</string>

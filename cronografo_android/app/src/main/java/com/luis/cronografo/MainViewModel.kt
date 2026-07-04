@@ -38,24 +38,24 @@ class MainViewModel(
     private val _lastShotNumber = MutableStateFlow<UiText>(UiText.DynamicString("-"))
     val lastShotNumber: StateFlow<UiText> = _lastShotNumber.asStateFlow()
 
-    private val _lastShotVelocity = MutableStateFlow("0.0")
+    private val _lastShotVelocity = MutableStateFlow("0.00")
     val lastShotVelocity: StateFlow<String> = _lastShotVelocity.asStateFlow()
 
-    private val _lastShotEnergy = MutableStateFlow("0.0")
+    private val _lastShotEnergy = MutableStateFlow("0.00")
     val lastShotEnergy: StateFlow<String> = _lastShotEnergy.asStateFlow()
 
-    private val _avgVelocity = MutableStateFlow("0.0")
+    private val _avgVelocity = MutableStateFlow("0.00")
     val avgVelocity: StateFlow<String> = _avgVelocity.asStateFlow()
-    private val _minVelocity = MutableStateFlow("0.0")
+    private val _minVelocity = MutableStateFlow("0.00")
     val minVelocity: StateFlow<String> = _minVelocity.asStateFlow()
-    private val _maxVelocity = MutableStateFlow("0.0")
+    private val _maxVelocity = MutableStateFlow("0.00")
     val maxVelocity: StateFlow<String> = _maxVelocity.asStateFlow()
 
-    private val _avgEnergy = MutableStateFlow("0.0")
+    private val _avgEnergy = MutableStateFlow("0.00")
     val avgEnergy: StateFlow<String> = _avgEnergy.asStateFlow()
-    private val _minEnergy = MutableStateFlow("0.0")
+    private val _minEnergy = MutableStateFlow("0.00")
     val minEnergy: StateFlow<String> = _minEnergy.asStateFlow()
-    private val _maxEnergy = MutableStateFlow("0.0")
+    private val _maxEnergy = MutableStateFlow("0.00")
     val maxEnergy: StateFlow<String> = _maxEnergy.asStateFlow()
 
     private var receivedBuffer = ""
@@ -64,6 +64,7 @@ class MainViewModel(
     private var currentParsingEnergy: Float? = null
 
     init {
+        voiceAnnouncer.setLanguage(_currentLanguage.value)
         viewModelScope.launch {
             bleManager.incomingData.collectLatest { data ->
                 receivedBuffer += data
@@ -143,8 +144,8 @@ class MainViewModel(
         _shots.value = emptyList()
         recalculateStatistics()
         _lastShotNumber.value = UiText.DynamicString("-")
-        _lastShotVelocity.value = "0.0"
-        _lastShotEnergy.value = "0.0"
+        _lastShotVelocity.value = "0.00"
+        _lastShotEnergy.value = "0.00"
         _statusText.value = UiText.StringResource(R.string.status_session_reset)
     }
 
@@ -210,8 +211,8 @@ class MainViewModel(
             _shots.value = currentList
             
             _lastShotNumber.value = UiText.StringResource(R.string.shot_number, newShot.number.toString())
-            _lastShotVelocity.value = String.format(Locale.US, "%.1f", newShot.velocity)
-            _lastShotEnergy.value = String.format(Locale.US, "%.1f", newShot.energy)
+            _lastShotVelocity.value = String.format(Locale.US, "%.2f", newShot.velocity)
+            _lastShotEnergy.value = String.format(Locale.US, "%.2f", newShot.energy)
             
             recalculateStatistics()
             voiceAnnouncer.announceShot(newShot.velocity, newShot.energy)
@@ -225,25 +226,25 @@ class MainViewModel(
     private fun recalculateStatistics() {
         val shotsList = _shots.value
         if (shotsList.isEmpty()) {
-            _avgVelocity.value = "0.0"
-            _minVelocity.value = "0.0"
-            _maxVelocity.value = "0.0"
-            _avgEnergy.value = "0.0"
-            _minEnergy.value = "0.0"
-            _maxEnergy.value = "0.0"
+            _avgVelocity.value = "0.00"
+            _minVelocity.value = "0.00"
+            _maxVelocity.value = "0.00"
+            _avgEnergy.value = "0.00"
+            _minEnergy.value = "0.00"
+            _maxEnergy.value = "0.00"
             return
         }
 
         val velocities = shotsList.map { it.velocity }
         val energies = shotsList.map { it.energy }
 
-        _avgVelocity.value = String.format(Locale.US, "%.1f", velocities.average())
-        _minVelocity.value = String.format(Locale.US, "%.1f", velocities.minOrNull() ?: 0f)
-        _maxVelocity.value = String.format(Locale.US, "%.1f", velocities.maxOrNull() ?: 0f)
+        _avgVelocity.value = String.format(Locale.US, "%.2f", velocities.average())
+        _minVelocity.value = String.format(Locale.US, "%.2f", velocities.minOrNull() ?: 0f)
+        _maxVelocity.value = String.format(Locale.US, "%.2f", velocities.maxOrNull() ?: 0f)
 
-        _avgEnergy.value = String.format(Locale.US, "%.1f", energies.average())
-        _minEnergy.value = String.format(Locale.US, "%.1f", energies.minOrNull() ?: 0f)
-        _maxEnergy.value = String.format(Locale.US, "%.1f", energies.maxOrNull() ?: 0f)
+        _avgEnergy.value = String.format(Locale.US, "%.2f", energies.average())
+        _minEnergy.value = String.format(Locale.US, "%.2f", energies.minOrNull() ?: 0f)
+        _maxEnergy.value = String.format(Locale.US, "%.2f", energies.maxOrNull() ?: 0f)
     }
 
     override fun onCleared() {

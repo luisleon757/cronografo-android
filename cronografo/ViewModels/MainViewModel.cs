@@ -21,15 +21,15 @@ namespace cronografo.ViewModels
         private bool _isConnected;
         private string _pelletWeightText = "0.52";
         private string _lastShotNumber = "-";
-        private string _lastShotVelocity = "0.0";
-        private string _lastShotEnergy = "0.0";
+        private string _lastShotVelocity = "0.00";
+        private string _lastShotEnergy = "0.00";
 
-        private string _avgVelocity = "0.0";
-        private string _minVelocity = "0.0";
-        private string _maxVelocity = "0.0";
-        private string _avgEnergy = "0.0";
-        private string _minEnergy = "0.0";
-        private string _maxEnergy = "0.0";
+        private string _avgVelocity = "0.00";
+        private string _minVelocity = "0.00";
+        private string _maxVelocity = "0.00";
+        private string _avgEnergy = "0.00";
+        private string _minEnergy = "0.00";
+        private string _maxEnergy = "0.00";
 
         private string _receivedBuffer = "";
         
@@ -237,8 +237,8 @@ namespace cronografo.ViewModels
             Shots.Clear();
             RecalculateStatistics();
             LastShotNumber = "-";
-            LastShotVelocity = "0.0";
-            LastShotEnergy = "0.0";
+            LastShotVelocity = "0.00";
+            LastShotEnergy = "0.00";
             StatusText = "Sesión reiniciada.";
         }
 
@@ -329,8 +329,8 @@ namespace cronografo.ViewModels
                     Shots.Insert(0, newShot);
                     
                     LastShotNumber = $"Disparo #{newShot.Number}";
-                    LastShotVelocity = $"{newShot.Velocity:F1}";
-                    LastShotEnergy = $"{newShot.Energy:F1}";
+                    LastShotVelocity = $"{newShot.Velocity:F2}";
+                    LastShotEnergy = $"{newShot.Energy:F2}";
                     
                     RecalculateStatistics();
 
@@ -348,20 +348,24 @@ namespace cronografo.ViewModels
         private void AnnounceShot(ShotModel shot)
         {
             // Decir velocidad en formato amigable
-            // Reemplazar el punto decimal por "punto" para una pronunciación natural en español
-            string velocidadPronunciar = shot.Velocity.ToString("F1").Replace(",", " punto ").Replace(".", " punto ");
-            string mensaje = $"{shot.Velocity:F0} metros por segundo";
+            // Reemplazar el punto decimal por "amb" para una pronunciación natural en catalán
+            string velocidadPronunciar = shot.Velocity.ToString("F2").Replace(",", " amb ").Replace(".", " amb ");
+            string mensaje = $"{velocidadPronunciar} metres per segon";
             
             // Usar TextToSpeech de MAUI
             Task.Run(async () =>
             {
                 try
                 {
+                    var locales = await TextToSpeech.Default.GetLocalesAsync();
+                    var selectedLocale = locales.FirstOrDefault(l => l.Language.StartsWith("ca", StringComparison.OrdinalIgnoreCase))
+                                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("es-ES", StringComparison.OrdinalIgnoreCase) || (l.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase) && string.Equals(l.Country, "ES", StringComparison.OrdinalIgnoreCase)))
+                                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase));
+
                     await TextToSpeech.Default.SpeakAsync(mensaje, new SpeechOptions
                     {
                         Volume = 1.0f,
-                        Locale = (await TextToSpeech.Default.GetLocalesAsync())
-                                    .FirstOrDefault(l => l.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+                        Locale = selectedLocale
                     });
                 }
                 catch (Exception ex)
@@ -375,25 +379,25 @@ namespace cronografo.ViewModels
         {
             if (Shots.Count == 0)
             {
-                AvgVelocity = "0.0";
-                MinVelocity = "0.0";
-                MaxVelocity = "0.0";
-                AvgEnergy = "0.0";
-                MinEnergy = "0.0";
-                MaxEnergy = "0.0";
+                AvgVelocity = "0.00";
+                MinVelocity = "0.00";
+                MaxVelocity = "0.00";
+                AvgEnergy = "0.00";
+                MinEnergy = "0.00";
+                MaxEnergy = "0.00";
                 return;
             }
 
             var velocities = Shots.Select(s => s.Velocity).ToList();
             var energies = Shots.Select(s => s.Energy).ToList();
 
-            AvgVelocity = $"{velocities.Average():F1}";
-            MinVelocity = $"{velocities.Min():F1}";
-            MaxVelocity = $"{velocities.Max():F1}";
+            AvgVelocity = $"{velocities.Average():F2}";
+            MinVelocity = $"{velocities.Min():F2}";
+            MaxVelocity = $"{velocities.Max():F2}";
 
-            AvgEnergy = $"{energies.Average():F1}";
-            MinEnergy = $"{energies.Min():F1}";
-            MaxEnergy = $"{energies.Max():F1}";
+            AvgEnergy = $"{energies.Average():F2}";
+            MinEnergy = $"{energies.Min():F2}";
+            MaxEnergy = $"{energies.Max():F2}";
         }
 
         protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = "")
